@@ -13,6 +13,10 @@ import sys
 
 from dotenv import load_dotenv
 
+_JUDGE_UNAVAILABLE_BACKOFF_CAP_S = 30.0
+_MAX_JUDGE_UNAVAILABLE_RETRIES = 5
+_JUDGE_UNAVAILABLE_BACKOFF_S = 1.0
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -67,7 +71,13 @@ async def run_practice(camera: int, fps: int) -> None:
 
 async def run_live() -> None:
     """Run the agent in live mode against the game server."""
-    from api import CasperAPI, MaxGuessesReached, NoActiveRound, Unauthorized
+    from api import (
+        CasperAPI,
+        JudgeUnavailable,
+        MaxGuessesReached,
+        NoActiveRound,
+        Unauthorized,
+    )
     from core import start_stream
 
     from agent.prompt import analyze
@@ -103,9 +113,22 @@ async def run_live() -> None:
             guess = await analyze(frame)
 
             if guess:
-                guess_count += 1
+                result = None
+                n_503 = 0
                 try:
-                    result = await client.guess(guess)
+                    while True:
+                        try:
+                            result = await client.guess(guess)
+                            break
+                        except JudgeUnavailable:
+                            if n_503 >= _MAX_JUDGE_UNAVAILABLE_RETRIES:
+                                break
+                            delay = min(
+                                _JUDGE_UNAVAILABLE_BACKOFF_S * (2**n_503),
+                                _JUDGE_UNAVAILABLE_BACKOFF_CAP_S,
+                            )
+                            await asyncio.sleep(delay)
+                            n_503 += 1
                 except Unauthorized:
                     print("[!] Unauthorized. Check TEAM_TOKEN matches your team's API key.")
                     break
@@ -116,6 +139,15 @@ async def run_live() -> None:
                     print("[!] Maximum guesses reached for this round.")
                     break
 
+                if result is None:
+                    attempts = 1 + _MAX_JUDGE_UNAVAILABLE_RETRIES
+                    print(
+                        f"[!] Judge unavailable (503) after {attempts} attempt(s). "
+                        "Skipping this guess; will try again on the next frame."
+                    )
+                    continue
+
+                guess_count += 1
                 id_suffix = f" id={result.guess_id}" if result.guess_id is not None else ""
                 print(f"  [guess #{guess_count}{id_suffix}] {guess}")
 

@@ -47,3 +47,14 @@ class MaxGuessesReached(Exception):
 
     def __str__(self) -> str:
         return "Maximum guesses reached for this round."
+
+
+class JudgeUnavailable(Exception):
+    """Raised when POST /api/guess returns 503.
+
+    The server could not judge the guess (e.g. judge LLM failure); no guess row
+    was persisted. Safe to retry the same guess.
+    """
+
+    def __str__(self) -> str:
+        return "Judge unavailable (503). The server could not score this guess; try again."

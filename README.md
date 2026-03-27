@@ -61,7 +61,7 @@ uv run -m agent --live
 2. Your `analyze()` function in `agent/prompt.py` receives the frame
 3. You send it to a vision LLM and return a guess (or `None` to skip)
 4. If in live mode, the guess is submitted via `POST /api/guess` (plain text body)
-5. If correct (HTTP 201), you win. If wrong (HTTP 409), keep guessing. The server may return 401 (bad token), 404 (no round), or 429 (max guesses).
+5. If correct (HTTP 201), you win. If wrong (HTTP 409), keep guessing. The server may return 401 (bad token), 404 (no round), 429 (max guesses), or 503 (judge unavailable — live mode retries with exponential backoff, then continues on the next frame if the judge stays down).
 6. The round ends when the admin closes the stream.
 
 ## What to Edit

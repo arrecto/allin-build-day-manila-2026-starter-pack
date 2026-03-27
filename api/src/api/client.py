@@ -9,6 +9,7 @@ import httpx
 from api.models import (
     Feed,
     GuessResult,
+    JudgeUnavailable,
     MaxGuessesReached,
     NoActiveRound,
     Unauthorized,
@@ -83,6 +84,7 @@ class CasperAPI:
             NoActiveRound: If no round is active (404).
             Unauthorized: If the team token is invalid (401).
             MaxGuessesReached: If the team hit the per-round guess limit (429).
+            JudgeUnavailable: If the server could not judge the guess (503).
         """
         resp = await self._client.post(
             "/api/guess",
@@ -111,6 +113,9 @@ class CasperAPI:
 
         if resp.status_code == 409:
             return GuessResult(correct=False, guess_id=None)
+
+        if resp.status_code == 503:
+            raise JudgeUnavailable()
 
         resp.raise_for_status()
         # Unreachable but keeps type checker happy
