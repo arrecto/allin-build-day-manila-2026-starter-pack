@@ -6,7 +6,7 @@
       "type": "debugpy",
       "request": "launch",
       "module": "agent",
-      "args": ["--practice", "--camera", "0", "--fps", "1"],
+      "args": ["--practice", "--camera", "0", "--fps", "5"],
       "cwd": "${workspaceFolder}",
       "python": "${workspaceFolder}/.venv/bin/python",
       "envFile": "${workspaceFolder}/.env",

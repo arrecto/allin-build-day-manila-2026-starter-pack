@@ -54,7 +54,7 @@ def _build_capture_cmd(ffmpeg: str, camera_index: int) -> list[str]:
         "-hide_banner", "-loglevel", "error",
         *input_fmt,
         "-i", device,
-        "-vframes", "1",
+        "-vframes", "3",  # capture 3; discard first 2 stale buffer frames on macOS
         "-f", "rawvideo", "-pix_fmt", "rgb24",
         "-vcodec", "rawvideo",
         "pipe:1",
@@ -79,9 +79,14 @@ async def _capture_one_frame(cmd: list[str]) -> Image.Image:
 
     raw = stdout
     num_bytes = len(raw)
-    for w, h in [(640, 480), (1280, 720), (1920, 1080), (320, 240), (800, 600)]:
-        if w * h * 3 == num_bytes:
-            return Image.frombytes("RGB", (w, h), raw)
+
+    # We request 3 frames to flush the stale avfoundation buffer; use only the last.
+    # Try to detect frame size from total byte count being an exact multiple.
+    for w, h in [(1280, 720), (640, 480), (1920, 1080), (320, 240), (800, 600)]:
+        frame_size = w * h * 3
+        if num_bytes % frame_size == 0:
+            # Take the last frame's bytes
+            return Image.frombytes("RGB", (w, h), raw[-frame_size:])
 
     raise RuntimeError(
         f"Could not determine frame dimensions from {num_bytes} bytes of raw data. "
