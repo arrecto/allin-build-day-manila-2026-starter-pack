@@ -41,23 +41,30 @@ async def analyze(frame: Frame) -> str | None:
     Returns:
         A text guess string, or None to skip this frame.
     """
-    # -----------------------------------------------------------------
-    # TODO: Replace this with your actual vision LLM call.
-    #
-    # Example with pydantic-ai:
-    #
-    #   from pydantic_ai import Agent
-    #   agent = Agent("claude-sonnet-4-20250514", system_prompt=SYSTEM_PROMPT)
-    #   result = await agent.run(
-    #       "What do you see in this image?",
-    #       # attach the frame image here
-    #   )
-    #   answer = result.output.strip()
-    #   return None if answer == "SKIP" else answer
-    # -----------------------------------------------------------------
+    import os
+    import io
+    import base64
+    from openai import AsyncOpenAI
 
-    print(f"  [agent] Got frame at {frame.timestamp.isoformat()} "
-          f"({frame.image.size[0]}x{frame.image.size[1]})")
-    print("  [agent] No LLM configured yet — edit agent/prompt.py!")
+    client = AsyncOpenAI(
+        api_key=os.environ["ANTHROPIC_API_KEY"],
+        base_url="https://openrouter.ai/api/v1",
+    )
 
-    return None
+    buf = io.BytesIO()
+    frame.image.save(buf, format="JPEG")
+    image_data = base64.standard_b64encode(buf.getvalue()).decode()
+
+    response = await client.chat.completions.create(
+        model="anthropic/claude-sonnet-4-5",
+        max_tokens=64,
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": [
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}},
+                {"type": "text", "text": "What is this? Give your best guess."},
+            ]},
+        ],
+    )
+    answer = response.choices[0].message.content.strip()
+    return None if answer == "SKIP" else answer
