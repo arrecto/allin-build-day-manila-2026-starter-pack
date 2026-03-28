@@ -1,0 +1,38 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Agent: Practice Mode",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "agent",
+      "args": ["--practice", "--camera", "0", "--fps", "1"],
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "envFile": "${workspaceFolder}/.env",
+      "justMyCode": false
+    },
+    {
+      "name": "Agent: Practice Mode (camera 1)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "agent",
+      "args": ["--practice", "--camera", "1", "--fps", "1"],
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "envFile": "${workspaceFolder}/.env",
+      "justMyCode": false
+    },
+    {
+      "name": "Agent: Live Mode",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "agent",
+      "args": ["--live"],
+      "cwd": "${workspaceFolder}",
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "envFile": "${workspaceFolder}/.env",
+      "justMyCode": false
+    }
+  ]
+}

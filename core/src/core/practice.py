@@ -36,17 +36,17 @@ def _build_capture_cmd(ffmpeg: str, camera_index: int) -> list[str]:
     system = platform.system()
 
     if system == "Linux":
-        input_fmt = ["-f", "v4l2"]
+        input_fmt = ["-f", "v4l2", "-video_size", "1280x720"]
         device = f"/dev/video{camera_index}"
     elif system == "Darwin":
         # avfoundation defaults to ~29.97 fps; many Mac cameras only allow 30.0.
-        input_fmt = ["-f", "avfoundation", "-framerate", "30"]
+        input_fmt = ["-f", "avfoundation", "-framerate", "30", "-video_size", "1280x720"]
         device = str(camera_index)
     elif system == "Windows":
         input_fmt = ["-f", "dshow"]
         device = f"video={camera_index}"
     else:
-        input_fmt = ["-f", "v4l2"]
+        input_fmt = ["-f", "v4l2", "-video_size", "1280x720"]
         device = f"/dev/video{camera_index}"
 
     return [
