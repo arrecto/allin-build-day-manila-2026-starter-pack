@@ -88,9 +88,6 @@ Rules:
 - Output ONLY the guess word or phrase — nothing else. No explanation, no bullet \
   points, no reasoning, no punctuation other than spaces between words.
 - Your entire response must be 1-5 words maximum.
-- WRONG: "Looking at the frames, I can see juggling"
-- WRONG: "The answer is juggling"
-- CORRECT: "juggling"
 - Be specific: "golden retriever" is better than "dog".
 - If the frames clearly show an action, name that action or the thing being mimed.
 """
@@ -238,7 +235,11 @@ async def _run_guesser(frames: list[Frame], clues: list[str]) -> str:
         ],
     )
 
-    return response.choices[0].message.content.strip()
+    raw = response.choices[0].message.content.strip()
+    # Take only the first line and collapse any internal whitespace to a single space,
+    # ensuring the string is safe to submit directly to client.guess().
+    guess = " ".join(raw.splitlines()[0].split()) if raw else ""
+    return guess
 
 
 # ---------------------------------------------------------------------------
