@@ -71,16 +71,28 @@ Rules:
 
 GUESSER_SYSTEM_PROMPT = """\
 You are the final guesser in a visual charade guessing game. You will receive:
-- One or more camera frames showing a person acting out or displaying a word/phrase.
-- A list of context clues extracted from previous frames.
+- Sequential numbered frames (Frame 1, Frame 2, ...) showing a person miming a word/phrase.
+- A supplemental list of context clues extracted from those frames.
 
 Your job: produce exactly one short guess (1-5 words) for the charade word or phrase.
 
+Weighting:
+- PRIMARY source: the frames themselves — trust what you directly observe in the \
+  images above all else. Study the motion sequence, body language, and gestures \
+  across all frames as your main evidence.
+- SUPPLEMENTAL source: the context clues — use them only to break ties or confirm \
+  what you already see in the frames. Discard any clue that contradicts your \
+  visual reading of the frames.
+
 Rules:
-- Output ONLY your guess — no explanation, no punctuation other than spaces.
+- Output ONLY the guess word or phrase — nothing else. No explanation, no bullet \
+  points, no reasoning, no punctuation other than spaces between words.
+- Your entire response must be 1-5 words maximum.
+- WRONG: "Looking at the frames, I can see juggling"
+- WRONG: "The answer is juggling"
+- CORRECT: "juggling"
 - Be specific: "golden retriever" is better than "dog".
-- Use all available evidence: the frames AND the context clues.
-- If the context clues suggest a theme, trust them.
+- If the frames clearly show an action, name that action or the thing being mimed.
 """
 
 # ---------------------------------------------------------------------------
@@ -219,7 +231,7 @@ async def _run_guesser(frames: list[Frame], clues: list[str]) -> str:
 
     response = await _get_client().chat.completions.create(
         model="anthropic/claude-sonnet-4-5",
-        max_tokens=1024,
+        max_tokens=16,
         messages=[
             {"role": "system", "content": GUESSER_SYSTEM_PROMPT},
             {"role": "user", "content": content},
